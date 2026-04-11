@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+      "Bash(npx @better-auth/cli@latest generate --config src/auth.ts)",
+      "Bash(npx prisma:*)"
     ]
   }
 }
