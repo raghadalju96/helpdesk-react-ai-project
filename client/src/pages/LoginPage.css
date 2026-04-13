@@ -47,6 +47,14 @@
   border-color: var(--accent);
 }
 
+.form-group input.input-error {
+  border-color: #e53e3e;
+}
+
+.form-group input.input-error:focus {
+  border-color: #e53e3e;
+}
+
 .login-error {
   color: #e53e3e;
   font-size: 14px;
