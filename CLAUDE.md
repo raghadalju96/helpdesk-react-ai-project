@@ -35,7 +35,7 @@ npm run test:e2e:report  # Open last HTML test report
 
 ## Tech Stack
 
-- **Frontend:** React 19, TypeScript 6, Vite, Tailwind CSS v4, shadcn/ui, React Router v7, react-hook-form + zod
+- **Frontend:** React 19, TypeScript 6, Vite, Tailwind CSS v4, shadcn/ui, React Router v7, react-hook-form + zod, axios, TanStack React Query
 - **Backend:** Express, TypeScript, Prisma (PostgreSQL), better-auth
 - **Testing:** Playwright (e2e, Chromium) — isolated `mydb_test` PostgreSQL database
 - **Planned:** Claude API (AI features), SendGrid/Mailgun (email), Docker (deployment)
@@ -60,6 +60,8 @@ npm run test:e2e:report  # Open last HTML test report
 - Use **shadcn/ui components** for all UI — avoid raw HTML `<button>`, `<input>`, `<label>`
 - Use **shadcn design tokens** (`text-primary`, `border-border`, etc.) — the old `--accent`, `--accent-bg`, `--accent-border` CSS variables were overwritten by shadcn and must not be used
 - Add shadcn components with: `cd client && npx shadcn@latest add <component>`
+- Use **axios** for all HTTP requests in the client — never use `fetch` directly; always pass `withCredentials: true` for authenticated endpoints
+- Use **TanStack React Query** (`useQuery`, `useMutation`) for all server state in the client — never use `useState` + `useEffect` for data fetching; define query functions outside the component
 
 ## Architecture
 

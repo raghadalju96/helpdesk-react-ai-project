@@ -5,7 +5,8 @@
       "Bash(npx @better-auth/cli@latest generate --config src/auth.ts)",
       "Bash(npx prisma:*)",
       "Bash(npx shadcn@latest init -d)",
-      "mcp__context7__resolve-library-id"
+      "mcp__context7__resolve-library-id",
+      "Bash(npm install *)"
     ]
   }
 }
