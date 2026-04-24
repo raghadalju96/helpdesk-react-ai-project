@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type User = {
   id: string;
@@ -41,7 +42,13 @@ export default function UsersPage() {
       <div className="p-8 max-w-5xl mx-auto w-full">
         <h1 className="text-2xl font-semibold text-(--text-h) mb-6">Users</h1>
 
-        {isPending && <p className="text-(--text) text-sm">Loading users…</p>}
+        {isPending && (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        )}
 
         {isError && (
           <p className="text-destructive text-sm">Failed to load users</p>
