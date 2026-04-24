@@ -4,7 +4,8 @@
       "mcp__context7__query-docs",
       "Bash(npx @better-auth/cli@latest generate --config src/auth.ts)",
       "Bash(npx prisma:*)",
-      "Bash(npx shadcn@latest init -d)"
+      "Bash(npx shadcn@latest init -d)",
+      "mcp__context7__resolve-library-id"
     ]
   }
 }
