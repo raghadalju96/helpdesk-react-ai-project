@@ -1,0 +1,2 @@
+- [Auth spec coverage](coverage_auth.md) — describe blocks, selectors, and API route for e2e/auth.spec.ts
+- [Auth test helpers and patterns](patterns_auth.md) — loginAsAdmin, fillAndSubmitLogin, clearSession, loading-state interception
