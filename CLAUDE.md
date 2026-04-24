@@ -16,6 +16,7 @@ npm workspaces with two packages:
 
 - `client/` — React + TypeScript + Vite + Tailwind v4 + shadcn/ui
 - `server/` — Express + TypeScript + Prisma + better-auth
+- `e2e/` — Playwright end-to-end tests (root level, not a workspace)
 
 The client proxies all `/api/*` requests to the server at `http://localhost:3000`.
 
@@ -24,14 +25,19 @@ The client proxies all `/api/*` requests to the server at `http://localhost:3000
 Run from the **repo root**:
 
 ```bash
-npm run dev:server    # Express on http://localhost:3000
-npm run dev:client    # Vite on http://localhost:5173
+npm run dev:server       # Express on http://localhost:3000
+npm run dev:client       # Vite on http://localhost:5173
+npm run test:e2e         # Run Playwright e2e tests (headless)
+npm run test:e2e:ui      # Run Playwright with interactive UI
+npm run test:e2e:debug   # Run Playwright in debug mode
+npm run test:e2e:report  # Open last HTML test report
 ```
 
 ## Tech Stack
 
 - **Frontend:** React 19, TypeScript 6, Vite, Tailwind CSS v4, shadcn/ui, React Router v7, react-hook-form + zod
 - **Backend:** Express, TypeScript, Prisma (PostgreSQL), better-auth
+- **Testing:** Playwright (e2e, Chromium) — isolated `mydb_test` PostgreSQL database
 - **Planned:** Claude API (AI features), SendGrid/Mailgun (email), Docker (deployment)
 - **Path alias:** `@/` → `src/` in the client
 
@@ -61,10 +67,14 @@ npm run dev:client    # Vite on http://localhost:5173
 - `server/src/middleware/` — auth and role-based access middleware
 - `server/src/prisma/` — Prisma schema and client
 
+## E2E Testing
+
+Use the **`e2e-playwright-writer` agent** for all Playwright test writing tasks — new specs, expanding coverage, or tests after implementing UI flows or API endpoints. Do not write e2e tests inline; always delegate to that agent.
+
 ## Implementation Status
 
-Currently at **Phase 2** complete. See `implementation-plan.md` for the full plan.
+Currently at **Phase 2** complete (+ Playwright e2e setup). See `implementation-plan.md` for the full plan.
 
-**Done:** Project scaffolding, auth (better-auth, login page, protected routes), Tailwind v4 + shadcn/ui setup.
+**Done:** Project scaffolding, auth (better-auth, login page, protected routes), Tailwind v4 + shadcn/ui setup, Playwright e2e setup with isolated test database.
 
 **Next:** Phase 3 — Core ticket CRUD (Prisma schema, ticket list/detail/create pages).
