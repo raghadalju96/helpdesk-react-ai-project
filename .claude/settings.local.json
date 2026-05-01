@@ -7,7 +7,8 @@
       "Bash(npx shadcn@latest init -d)",
       "mcp__context7__resolve-library-id",
       "Bash(npm install *)",
-      "Bash(npx shadcn@latest add skeleton --yes)"
+      "Bash(npx shadcn@latest add skeleton --yes)",
+      "Bash(npx tsc *)"
     ]
   }
 }
