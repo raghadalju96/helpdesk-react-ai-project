@@ -1,11 +1,47 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/requireAuth'
 import prisma from '../db'
+import { Prisma, TicketStatus, TicketCategory } from '../generated/prisma/client'
 
 const router = Router()
 
-router.get('/tickets', requireAuth, async (_req, res) => {
+const SORTABLE_COLUMNS = ['id', 'subject', 'fromEmail', 'fromName', 'status', 'category', 'createdAt'] as const
+type SortableColumn = typeof SORTABLE_COLUMNS[number]
+
+const VALID_STATUSES: TicketStatus[] = ['open', 'resolved', 'closed']
+const VALID_CATEGORIES: TicketCategory[] = ['generalQuestion', 'technicalQuestion', 'refundRequest']
+
+router.get('/tickets', requireAuth, async (req, res) => {
+  const sortByParam = req.query.sortBy as string
+  const sortBy: SortableColumn = (SORTABLE_COLUMNS as readonly string[]).includes(sortByParam)
+    ? (sortByParam as SortableColumn)
+    : 'createdAt'
+  const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc'
+
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : ''
+  const statusParam = req.query.status as string
+  const categoryParam = req.query.category as string
+
+  const status = VALID_STATUSES.includes(statusParam as TicketStatus)
+    ? (statusParam as TicketStatus)
+    : undefined
+  const category = VALID_CATEGORIES.includes(categoryParam as TicketCategory)
+    ? (categoryParam as TicketCategory)
+    : undefined
+
+  const where: Prisma.TicketWhereInput = {}
+  if (search) {
+    where.OR = [
+      { subject: { contains: search, mode: 'insensitive' } },
+      { fromName: { contains: search, mode: 'insensitive' } },
+      { fromEmail: { contains: search, mode: 'insensitive' } },
+    ]
+  }
+  if (status) where.status = status
+  if (category) where.category = category
+
   const tickets = await prisma.ticket.findMany({
+    where,
     select: {
       id: true,
       subject: true,
@@ -15,7 +51,7 @@ router.get('/tickets', requireAuth, async (_req, res) => {
       category: true,
       createdAt: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { [sortBy]: sortOrder },
   })
 
   res.json({ tickets })
