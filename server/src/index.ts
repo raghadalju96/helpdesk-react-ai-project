@@ -4,6 +4,7 @@ import cors from 'cors'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './auth'
 import usersRouter from './routes/users'
+import ticketsRouter from './routes/tickets'
 import webhooksRouter from './routes/webhooks'
 
 const app = express()
@@ -16,6 +17,7 @@ app.all('/api/auth/*splat', toNodeHandler(auth))
 
 app.use(express.json())
 app.use('/api', usersRouter)
+app.use('/api', ticketsRouter)
 app.use('/api/webhooks', webhooksRouter)
 
 app.get('/api/health', (_req, res) => {
