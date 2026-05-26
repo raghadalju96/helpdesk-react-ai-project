@@ -1,2 +1,3 @@
 - [Auth spec coverage](coverage_auth.md) — describe blocks, selectors, and API route for e2e/auth.spec.ts
 - [Auth test helpers and patterns](patterns_auth.md) — loginAsAdmin, fillAndSubmitLogin, clearSession, loading-state interception
+- [Webhook spec coverage](coverage_webhooks.md) — describe blocks and key constraints for e2e/webhooks.spec.ts (POST /api/webhooks/email)

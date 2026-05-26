@@ -4,6 +4,7 @@ import cors from 'cors'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './auth'
 import usersRouter from './routes/users'
+import webhooksRouter from './routes/webhooks'
 
 const app = express()
 const PORT = process.env.PORT ?? 3000
@@ -15,6 +16,7 @@ app.all('/api/auth/*splat', toNodeHandler(auth))
 
 app.use(express.json())
 app.use('/api', usersRouter)
+app.use('/api/webhooks', webhooksRouter)
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
