@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -51,6 +53,13 @@ type Filters = {
   category: string;
 };
 
+type TicketsResponse = {
+  tickets: Ticket[];
+  total: number;
+};
+
+const PAGE_SIZE = 10;
+
 const STATUS_STYLES: Record<TicketStatus, string> = {
   open: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   resolved:
@@ -66,21 +75,23 @@ const CATEGORY_LABELS: Record<NonNullable<TicketCategory>, string> = {
 
 async function fetchTickets(
   sorting: SortingState,
-  filters: Filters
-): Promise<Ticket[]> {
+  filters: Filters,
+  page: number
+): Promise<TicketsResponse> {
   const sortBy = sorting[0]?.id ?? "createdAt";
   const sortOrder = sorting[0]?.desc ? "desc" : "asc";
-  const res = await axios.get<{ tickets: Ticket[] }>("/api/tickets", {
+  const res = await axios.get<TicketsResponse>("/api/tickets", {
     params: {
       sortBy,
       sortOrder,
+      page,
       ...(filters.search && { search: filters.search }),
       ...(filters.status && { status: filters.status }),
       ...(filters.category && { category: filters.category }),
     },
     withCredentials: true,
   });
-  return res.data.tickets;
+  return res.data;
 }
 
 const columns: ColumnDef<Ticket>[] = [
@@ -97,7 +108,12 @@ const columns: ColumnDef<Ticket>[] = [
     accessorKey: "subject",
     header: "Subject",
     cell: ({ row }) => (
-      <span className="font-medium">{row.original.subject}</span>
+      <Link
+        to={`/tickets/${row.original.id}`}
+        className="font-medium hover:underline"
+      >
+        {row.original.subject}
+      </Link>
     ),
   },
   {
@@ -148,7 +164,7 @@ export default function TicketsPage() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
-
+  const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState<Filters>({
     search: "",
@@ -156,25 +172,32 @@ export default function TicketsPage() {
     category: "",
   });
 
-  // Debounce the search input
+  // Debounce search input and reset to page 1
   useEffect(() => {
-    const timer = setTimeout(
-      () => setFilters((f) => ({ ...f, search: searchInput })),
-      300
-    );
+    const timer = setTimeout(() => {
+      setFilters((f) => ({ ...f, search: searchInput }));
+      setPage(1);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data: tickets, isPending, isError } = useQuery({
-    queryKey: ["tickets", sorting, filters],
-    queryFn: () => fetchTickets(sorting, filters),
+  const { data, isPending, isError } = useQuery({
+    queryKey: ["tickets", sorting, filters, page],
+    queryFn: () => fetchTickets(sorting, filters, page),
   });
+
+  const tickets = data?.tickets;
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const table = useReactTable({
     data: tickets ?? [],
     columns,
     state: { sorting },
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      setSorting(updater);
+      setPage(1);
+    },
     manualSorting: true,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -196,9 +219,10 @@ export default function TicketsPage() {
           />
           <Select
             value={filters.status}
-            onValueChange={(val) =>
-              setFilters((f) => ({ ...f, status: val === "all" ? "" : val }))
-            }
+            onValueChange={(val) => {
+              setFilters((f) => ({ ...f, status: val === "all" ? "" : val }));
+              setPage(1);
+            }}
           >
             <SelectTrigger className="w-36">
               <SelectValue placeholder="All statuses" />
@@ -212,9 +236,13 @@ export default function TicketsPage() {
           </Select>
           <Select
             value={filters.category}
-            onValueChange={(val) =>
-              setFilters((f) => ({ ...f, category: val === "all" ? "" : val }))
-            }
+            onValueChange={(val) => {
+              setFilters((f) => ({
+                ...f,
+                category: val === "all" ? "" : val,
+              }));
+              setPage(1);
+            }}
           >
             <SelectTrigger className="w-44">
               <SelectValue placeholder="All categories" />
@@ -245,54 +273,85 @@ export default function TicketsPage() {
         )}
 
         {tickets && tickets.length > 0 && (
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    const sorted = header.column.getIsSorted();
-                    return (
-                      <TableHead
-                        key={header.id}
-                        className={header.id === "id" ? "w-14" : ""}
-                      >
-                        <button
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                          onClick={header.column.getToggleSortingHandler()}
+          <>
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      const sorted = header.column.getIsSorted();
+                      return (
+                        <TableHead
+                          key={header.id}
+                          className={header.id === "id" ? "w-14" : ""}
                         >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {sorted === "asc" ? (
-                            <ArrowUp className="h-3.5 w-3.5" />
-                          ) : sorted === "desc" ? (
-                            <ArrowDown className="h-3.5 w-3.5" />
-                          ) : (
-                            <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
-                          )}
-                        </button>
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                          <button
+                            className="flex items-center gap-1 hover:text-foreground transition-colors"
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {sorted === "asc" ? (
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            ) : sorted === "desc" ? (
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
+                            )}
+                          </button>
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-muted-foreground">
+                {total} ticket{total !== 1 ? "s" : ""}
+              </p>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => p - 1)}
+                    disabled={page === 1}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={page >= totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

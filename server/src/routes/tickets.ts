@@ -40,21 +40,45 @@ router.get('/tickets', requireAuth, async (req, res) => {
   if (status) where.status = status
   if (category) where.category = category
 
-  const tickets = await prisma.ticket.findMany({
-    where,
-    select: {
-      id: true,
-      subject: true,
-      fromEmail: true,
-      fromName: true,
-      status: true,
-      category: true,
-      createdAt: true,
-    },
-    orderBy: { [sortBy]: sortOrder },
-  })
+  const PAGE_SIZE = 10
+  const page = Math.max(1, parseInt(req.query.page as string) || 1)
 
-  res.json({ tickets })
+  const [tickets, total] = await prisma.$transaction([
+    prisma.ticket.findMany({
+      where,
+      select: {
+        id: true,
+        subject: true,
+        fromEmail: true,
+        fromName: true,
+        status: true,
+        category: true,
+        createdAt: true,
+      },
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.ticket.count({ where }),
+  ])
+
+  res.json({ tickets, total })
+})
+
+router.get('/tickets/:id', requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id)
+  if (isNaN(id)) {
+    res.status(400).json({ error: 'Invalid ticket id' })
+    return
+  }
+
+  const ticket = await prisma.ticket.findUnique({ where: { id } })
+  if (!ticket) {
+    res.status(404).json({ error: 'Ticket not found' })
+    return
+  }
+
+  res.json(ticket)
 })
 
 export default router
